@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 event EnterParticipant(address indexed participant);
 event DeclaredWinner(address indexed winner, uint256 indexed prizeMoney);
+event WithdrawMoney();
 
 error Lottery__InsufficiantFund();
 error Lottery__InvalidState();
@@ -108,5 +109,7 @@ contract Lottery {
             revert Lottery__PaymentFaild();
         }
         s_lotteryStatus = Status.ONGOING;
+
+        emit WithdrawMoney();
     }
 }
