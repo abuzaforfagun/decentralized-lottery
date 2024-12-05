@@ -1,17 +1,29 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity ^0.8.19;
 
-import {Script} from "forge-std/Script.sol";
+import {Script, console} from "forge-std/Script.sol";
 import {Lottery} from "../src/Lottery.sol";
+import {HelperConfig} from "./HelperConfig.s.sol";
 
 contract DeployLottery is Script {
-    uint256 private constant ENTRY_FEE = 0.001 ether;
-    uint256 private constant INTERVAL_IN_SECONDS = 120;
-
     function run() public returns (Lottery) {
-        vm.startBroadcast();
-        Lottery lottery = new Lottery(ENTRY_FEE, INTERVAL_IN_SECONDS);
-        vm.stopBroadcast();
+        HelperConfig helperConfig = new HelperConfig();
+        (
+            HelperConfig.NetworkConfig memory config,
+            Lottery lottery
+        ) = helperConfig.getNetworkConfig(31337);
+
+        console.log("VRF Coordinator from deploy: %s", config.vrfCoordinator);
+
+        // vm.startBroadcast();
+        // Lottery lottery = new Lottery(
+        //     config.entryFee,
+        //     config.intervalInSeconds,
+        //     config.vrfCoordinator,
+        //     config.keyHash,
+        //     config.subscriptionId
+        // );
+        // vm.stopBroadcast();
 
         return lottery;
     }
