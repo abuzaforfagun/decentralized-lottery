@@ -6,12 +6,12 @@ import {Test} from "forge-std/Test.sol";
 import {Lottery} from "../src/Lottery.sol";
 
 contract LotteryTest is Test {
-    uint256 private constant ENTRY_FEE = 0.00001 ether;
-    uint256 private constant INTERVAL_IN_SECONDS = 10;
+    uint256 private constant ENTRY_FEE = 0.05 ether;
+    uint256 private constant NUMBER_OF_PARTICIPANT_REQUIRE_TO_DRAW = 2;
     Lottery public lottery;
 
     function setUp() public {
-        lottery = new Lottery(ENTRY_FEE, INTERVAL_IN_SECONDS);
+        lottery = new Lottery(ENTRY_FEE, NUMBER_OF_PARTICIPANT_REQUIRE_TO_DRAW);
     }
 
     function test_join_InsufficiantFund() public {
@@ -49,13 +49,6 @@ contract LotteryTest is Test {
         assertEq(lottery.getTotalParticipants(), 1);
     }
 
-    function test_declareWinner_IntervalNotFinished() public {
-        vm.deal(address(this), 1 ether);
-        vm.expectRevert(Lottery.Lottery_InvalidState.selector);
-
-        lottery.declareWinner();
-    }
-
     function test_declareWinner_StatusIsNotOnGoing() public {
         vm.deal(address(this), 1 ether);
         uint256 slot = 4;
@@ -67,16 +60,14 @@ contract LotteryTest is Test {
         lottery.declareWinner();
     }
 
-    function test_declareWinner_NoParticipants() public {
+    function test_declareWinner_NoEnoughParticipants() public {
         vm.deal(address(this), 1 ether);
-        vm.warp(block.timestamp + 15);
 
-        vm.expectRevert(Lottery.Lottery_NoParticipants.selector);
+        vm.expectRevert(Lottery.Lottery_NotEnoughParticipants.selector);
         lottery.declareWinner();
     }
 
     function test_declareWinner_ShouldResetParticipants() public {
-        vm.warp(block.timestamp + 15);
         address participant1 = address(0x123);
         vm.deal(participant1, 1 ether);
         vm.prank(participant1);
@@ -87,16 +78,10 @@ contract LotteryTest is Test {
         vm.prank(participant2);
         lottery.join{value: ENTRY_FEE}();
 
-        vm.prank(address(this));
-        vm.deal(address(this), 1 ether);
-
-        lottery.declareWinner();
-
         assertEq(0, lottery.getTotalParticipants());
     }
 
     function test_declareWinner_ShouldSendPrizeToWinner() public {
-        vm.warp(block.timestamp + 15);
         address participant1 = address(0x123);
         vm.deal(participant1, 1 ether);
         vm.prank(participant1);
@@ -106,13 +91,8 @@ contract LotteryTest is Test {
         address participant2 = address(0x131);
         vm.deal(participant2, 1 ether);
         vm.prank(participant2);
+        uint256 balanceOfParticipant2 = payable(participant2).balance - ENTRY_FEE;
         lottery.join{value: ENTRY_FEE}();
-        uint256 balanceOfParticipant2 = payable(participant2).balance;
-
-        vm.prank(address(this));
-        vm.deal(address(this), 1 ether);
-
-        lottery.declareWinner();
 
         assert(
             payable(participant1).balance > balanceOfParticipant1
@@ -121,7 +101,6 @@ contract LotteryTest is Test {
     }
 
     function test_declareWinner_ShouldStoreLastRoundWinner() public {
-        vm.warp(block.timestamp + 15);
         address participant1 = address(0x123);
         vm.deal(participant1, 1 ether);
         vm.prank(participant1);
@@ -131,11 +110,6 @@ contract LotteryTest is Test {
         vm.deal(participant2, 1 ether);
         vm.prank(participant2);
         lottery.join{value: ENTRY_FEE}();
-
-        vm.prank(address(this));
-        vm.deal(address(this), 1 ether);
-
-        lottery.declareWinner();
 
         assertEq(0, lottery.getTotalParticipants());
         address lastRoundWinner = lottery.getLastRoundWinner();

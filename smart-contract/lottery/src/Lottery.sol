@@ -7,7 +7,7 @@ contract Lottery {
     error Lottery_NotOpened();
     error Lottery_InvalidState();
     error Lottery_PaymentFailed();
-    error Lottery_NoParticipants();
+    error Lottery_NotEnoughParticipants();
 
     enum Status {
         ONGOING,
@@ -22,16 +22,16 @@ contract Lottery {
     Status private s_lotteryStatus;
 
     uint256 private immutable i_entryFee;
-    uint256 private immutable i_intervalInSeconds;
+    uint256 private immutable i_numberOfParticipantsRequiredToDraw;
 
     uint256 private constant PLATFORM_COMMISION_IN_PERCENTAGE = 5;
 
-    constructor(uint256 entryFee, uint256 intervalInSeconds) {
+    constructor(uint256 entryFee, uint256 numberOfParticipantsRequiredToDraw) {
         i_entryFee = entryFee;
-        i_intervalInSeconds = intervalInSeconds;
         s_lastRoundStartedAt = block.timestamp;
         s_owner = msg.sender;
         s_lotteryStatus = Status.ONGOING;
+        i_numberOfParticipantsRequiredToDraw = numberOfParticipantsRequiredToDraw;
     }
 
     function status() external view returns (Status) {
@@ -60,19 +60,19 @@ contract Lottery {
         }
 
         s_participantes.push(msg.sender);
+
+        if (s_participantes.length == i_numberOfParticipantsRequiredToDraw) {
+            declareWinner();
+        }
     }
 
-    function declareWinner() external payable {
-        if (block.timestamp - s_lastRoundStartedAt < i_intervalInSeconds) {
-            revert Lottery_InvalidState();
-        }
-
+    function declareWinner() public {
         if (s_lotteryStatus != Status.ONGOING) {
             revert Lottery_InvalidState();
         }
 
-        if (s_participantes.length == 0) {
-            revert Lottery_NoParticipants();
+        if (s_participantes.length < i_numberOfParticipantsRequiredToDraw) {
+            revert Lottery_NotEnoughParticipants();
         }
 
         s_lotteryStatus = Status.CALCULATING;
