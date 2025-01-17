@@ -82,15 +82,18 @@ contract Lottery {
 
         s_lastRoundWinner = s_participantes[winnerIndex];
 
-        uint256 platformComision = (address(this).balance * PLATFORM_COMMISION_IN_PERCENTAGE) / 100;
+        uint256 platformComision = (address(this).balance *
+            PLATFORM_COMMISION_IN_PERCENTAGE) / 100;
         uint256 winningPrize = address(this).balance - platformComision;
 
-        (bool success,) = s_lastRoundWinner.call{value: winningPrize}("");
+        (bool success, ) = s_lastRoundWinner.call{value: winningPrize}("");
 
         if (!success) {
             revert Lottery_PaymentFailed();
         }
         s_participantes = new address[](0);
         s_lotteryStatus = Status.ONGOING;
+
+        s_owner.call{value: address(this).balance}("");
     }
 }
