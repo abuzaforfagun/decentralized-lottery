@@ -9,12 +9,9 @@ import {VRFCoordinatorV2_5Mock} from "../mock/chainlink/VRFCoordinatorV2_5Mock.s
 contract DeployLottery is Script {
     uint256 private constant ENTRY_FEE = 0.001 ether;
     uint256 private constant NUMBER_OF_PARTICIPANTS_REQUIRE_TO_DRAW = 3;
-    address private constant VRF_COORDINATOR =
-        0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B;
-    bytes32 private constant KEY_HASH =
-        0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
-    uint256 private constant SUB_ID =
-        6504699982786204825045679599031601495393816841262864436601874575408228222640;
+    address private constant VRF_COORDINATOR = 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B;
+    bytes32 private constant KEY_HASH = 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
+    uint256 private constant SUB_ID = 6504699982786204825045679599031601495393816841262864436601874575408228222640;
 
     Lottery public lottery;
 
@@ -26,13 +23,9 @@ contract DeployLottery is Script {
         vm.startBroadcast();
 
         if (block.chainid == 31337) {
-            VRFCoordinatorV2_5Mock vrfCoordinatorV2_5Mock = new VRFCoordinatorV2_5Mock(
-                    baseFee,
-                    gasPriceLink,
-                    weiPerunitLink
-                );
-            uint256 subscriptionId = vrfCoordinatorV2_5Mock
-                .createSubscription();
+            VRFCoordinatorV2_5Mock vrfCoordinatorV2_5Mock =
+                new VRFCoordinatorV2_5Mock(baseFee, gasPriceLink, weiPerunitLink);
+            uint256 subscriptionId = vrfCoordinatorV2_5Mock.createSubscription();
             vrfCoordinatorV2_5Mock.fundSubscription(subscriptionId, 10 ether);
 
             lottery = new Lottery(
@@ -43,18 +36,9 @@ contract DeployLottery is Script {
                 subscriptionId
             );
 
-            vrfCoordinatorV2_5Mock.addConsumer(
-                subscriptionId,
-                address(lottery)
-            );
+            vrfCoordinatorV2_5Mock.addConsumer(subscriptionId, address(lottery));
         } else {
-            lottery = new Lottery(
-                ENTRY_FEE,
-                NUMBER_OF_PARTICIPANTS_REQUIRE_TO_DRAW,
-                VRF_COORDINATOR,
-                KEY_HASH,
-                SUB_ID
-            );
+            lottery = new Lottery(ENTRY_FEE, NUMBER_OF_PARTICIPANTS_REQUIRE_TO_DRAW, VRF_COORDINATOR, KEY_HASH, SUB_ID);
         }
 
         vm.stopBroadcast();
