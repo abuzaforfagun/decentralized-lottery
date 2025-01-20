@@ -35,6 +35,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
     uint16 private constant NUM_OF_REQUEST_CONFIRMATION = 3;
     uint32 private constant CALLBACK_GAS_LIMIT = 2500000;
 
+    event RoundStarted();
     event UserJoined(address indexed user);
     event WinnerDeclared(address indexed winner);
 
@@ -52,6 +53,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
         i_numberOfParticipantsRequiredToDraw = numberOfParticipantsRequiredToDraw;
         i_keyHash = keyHash;
         i_subId = subId;
+        emit RoundStarted();
     }
 
     function status() external view returns (Status) {
@@ -92,6 +94,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
         s_participantes = new address[](0);
         s_lotteryStatus = Status.ONGOING;
         emit WinnerDeclared(s_lastRoundWinner);
+        emit RoundStarted();
 
         s_owner.call{value: address(this).balance}("");
         s_requestID = 0;
