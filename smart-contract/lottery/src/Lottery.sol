@@ -35,6 +35,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
     uint16 private constant NUM_OF_REQUEST_CONFIRMATION = 3;
     uint32 private constant CALLBACK_GAS_LIMIT = 2500000;
 
+    event RoundStarted();
     event UserJoined(address indexed user);
     event WinnerDeclared(address indexed winner);
 
@@ -52,6 +53,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
         i_numberOfParticipantsRequiredToDraw = numberOfParticipantsRequiredToDraw;
         i_keyHash = keyHash;
         i_subId = subId;
+        emit RoundStarted();
     }
 
     function status() external view returns (Status) {
@@ -74,17 +76,21 @@ contract Lottery is VRFConsumerBaseV2Plus {
         return s_requestID;
     }
 
-    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
+    function fulfillRandomWords(
+        uint256 requestId,
+        uint256[] calldata randomWords
+    ) internal override {
         uint256 totalParticipants = s_participantes.length;
 
         uint256 winnerIndex = randomWords[0] % totalParticipants;
 
         s_lastRoundWinner = s_participantes[winnerIndex];
 
-        uint256 platformComision = (address(this).balance * PLATFORM_COMMISION_IN_PERCENTAGE) / 100;
+        uint256 platformComision = (address(this).balance *
+            PLATFORM_COMMISION_IN_PERCENTAGE) / 100;
         uint256 winningPrize = address(this).balance - platformComision;
 
-        (bool success,) = s_lastRoundWinner.call{value: winningPrize}("");
+        (bool success, ) = s_lastRoundWinner.call{value: winningPrize}("");
 
         if (!success) {
             revert Lottery_PaymentFailed();
@@ -92,6 +98,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
         s_participantes = new address[](0);
         s_lotteryStatus = Status.ONGOING;
         emit WinnerDeclared(s_lastRoundWinner);
+        emit RoundStarted();
 
         s_owner.call{value: address(this).balance}("");
         s_requestID = 0;
@@ -133,7 +140,9 @@ contract Lottery is VRFConsumerBaseV2Plus {
                 requestConfirmations: NUM_OF_REQUEST_CONFIRMATION,
                 callbackGasLimit: CALLBACK_GAS_LIMIT,
                 numWords: NUM_OF_WORDS,
-                extraArgs: VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: false}))
+                extraArgs: VRFV2PlusClient._argsToBytes(
+                    VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
+                )
             })
         );
         return s_requestID;
