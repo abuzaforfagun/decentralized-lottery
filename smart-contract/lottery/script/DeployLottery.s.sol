@@ -24,13 +24,9 @@ contract DeployLottery is Script {
         vm.startBroadcast();
 
         if (block.chainid == 31337) {
-            VRFCoordinatorV2_5Mock vrfCoordinatorV2_5Mock = new VRFCoordinatorV2_5Mock(
-                    baseFee,
-                    gasPriceLink,
-                    weiPerunitLink
-                );
-            uint256 subscriptionId = vrfCoordinatorV2_5Mock
-                .createSubscription();
+            VRFCoordinatorV2_5Mock vrfCoordinatorV2_5Mock =
+                new VRFCoordinatorV2_5Mock(baseFee, gasPriceLink, weiPerunitLink);
+            uint256 subscriptionId = vrfCoordinatorV2_5Mock.createSubscription();
             vrfCoordinatorV2_5Mock.fundSubscription(subscriptionId, 10 ether);
 
             lottery = new Lottery(
@@ -41,18 +37,10 @@ contract DeployLottery is Script {
                 subscriptionId
             );
 
-            vrfCoordinatorV2_5Mock.addConsumer(
-                subscriptionId,
-                address(lottery)
-            );
+            vrfCoordinatorV2_5Mock.addConsumer(subscriptionId, address(lottery));
         } else {
-            lottery = new Lottery(
-                ENTRY_FEE,
-                NUMBER_OF_PARTICIPANTS_REQUIRE_TO_DRAW,
-                vrfCoordinatorAddress,
-                keyHash,
-                subId
-            );
+            lottery =
+                new Lottery(ENTRY_FEE, NUMBER_OF_PARTICIPANTS_REQUIRE_TO_DRAW, vrfCoordinatorAddress, keyHash, subId);
         }
 
         vm.stopBroadcast();
