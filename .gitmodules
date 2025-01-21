@@ -10,3 +10,6 @@
 [submodule "smart-contract/lottery/lib/chainlink"]
 	path = smart-contract/lottery/lib/chainlink
 	url = https://github.com/smartcontractkit/chainlink
+[submodule "smart-contract/lottery/lib/dotenv"]
+	path = smart-contract/lottery/lib/dotenv
+	url = https://github.com/dotenv-rs/dotenv
