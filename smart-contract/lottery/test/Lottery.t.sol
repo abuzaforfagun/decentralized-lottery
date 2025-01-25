@@ -67,34 +67,6 @@ contract LotteryTest is Test {
         assertEq(lottery.getTotalParticipants(), 1);
     }
 
-    function test_join_should_return_0_when_not_has_enough_participants() public {
-        vm.deal(address(this), 1 ether);
-
-        uint256 requestId = lottery.join{value: ENTRY_FEE}();
-
-        assertEq(lottery.getTotalParticipants(), 1);
-        assertEq(requestId, 0);
-    }
-
-    function test_join_should_return_requestId_when_has_enough_participants() public {
-        vm.deal(address(this), 1 ether);
-
-        address participant1 = address(0x123);
-        vm.deal(participant1, 1 ether);
-        vm.prank(participant1);
-
-        uint256 requestId1 = lottery.join{value: ENTRY_FEE}();
-
-        address participant2 = address(0x121);
-        vm.deal(participant2, 1 ether);
-        vm.prank(participant2);
-
-        uint256 requestId2 = lottery.join{value: ENTRY_FEE}();
-
-        assertEq(requestId1, 0);
-        assert(requestId2 != 0);
-    }
-
     function test_declareWinner_StatusIsNotOnGoing() public {
         vm.deal(address(this), 1 ether);
         uint256 slot = 7;
@@ -113,6 +85,32 @@ contract LotteryTest is Test {
         lottery.declareWinner();
     }
 
+    function test_performUpkeep_shouldreturn_false_when_hasNoEnoughParticipants() public {
+        address participant1 = address(0x123);
+        vm.deal(participant1, 1 ether);
+        vm.prank(participant1);
+
+        lottery.join{value: ENTRY_FEE}();
+
+        (bool upkeepNeeded,) = lottery.checkUpkeep("");
+        assert(!upkeepNeeded);
+    }
+
+    function test_performUpkeep_shouldreturn_true_when_hasEnoughParticipants() public {
+        address participant1 = address(0x123);
+        vm.deal(participant1, 1 ether);
+        vm.prank(participant1);
+        lottery.join{value: ENTRY_FEE}();
+
+        address participant2 = address(0x124);
+        vm.deal(participant2, 1 ether);
+        vm.prank(participant2);
+        lottery.join{value: ENTRY_FEE}();
+
+        (bool upkeepNeeded,) = lottery.checkUpkeep("");
+        assert(upkeepNeeded);
+    }
+
     function test_declareWinner_ShouldResetParticipants() public {
         address participant1 = address(0x123);
         vm.deal(participant1, 1 ether);
@@ -122,7 +120,8 @@ contract LotteryTest is Test {
         address participant2 = address(0x131);
         vm.deal(participant2, 1 ether);
         vm.prank(participant2);
-        uint256 requestId = lottery.join{value: ENTRY_FEE}();
+        lottery.join{value: ENTRY_FEE}();
+        uint256 requestId = lottery.declareWinner();
         vrfCoordinatorV2_5Mock.fulfillRandomWords(requestId, address(lottery));
 
         assertEq(0, lottery.getTotalParticipants());
@@ -140,7 +139,8 @@ contract LotteryTest is Test {
         vm.prank(participant2);
         uint256 balanceOfParticipant2 = payable(participant2).balance - ENTRY_FEE;
 
-        uint256 requestId = lottery.join{value: ENTRY_FEE}();
+        lottery.join{value: ENTRY_FEE}();
+        uint256 requestId = lottery.declareWinner();
         vrfCoordinatorV2_5Mock.fulfillRandomWords(requestId, address(lottery));
 
         assert(
@@ -158,11 +158,39 @@ contract LotteryTest is Test {
         address participant2 = address(0x131);
         vm.deal(participant2, 1 ether);
         vm.prank(participant2);
-        uint256 requestId = lottery.join{value: ENTRY_FEE}();
+        lottery.join{value: ENTRY_FEE}();
+        uint256 requestId = lottery.declareWinner();
         vrfCoordinatorV2_5Mock.fulfillRandomWords(requestId, address(lottery));
 
         assertEq(0, lottery.getTotalParticipants());
         address lastRoundWinner = lottery.getLastRoundWinner();
         assert(lastRoundWinner == participant1 || lastRoundWinner == participant2);
+    }
+
+    function test_performUpkeep_should_not_call_declareWinner_when_hasNoEnoughParticipants() public {
+        address participant1 = address(0x123);
+        vm.deal(participant1, 1 ether);
+        vm.prank(participant1);
+        lottery.join{value: ENTRY_FEE}();
+
+        lottery.performUpkeep("");
+
+        assertEq(0, lottery.getVrfRequestId());
+    }
+
+    function test_performUpkeep_should_call_declareWinner_when_hasEnoughParticipants() public {
+        address participant1 = address(0x123);
+        vm.deal(participant1, 1 ether);
+        vm.prank(participant1);
+        lottery.join{value: ENTRY_FEE}();
+
+        address participant2 = address(0x122);
+        vm.deal(participant2, 1 ether);
+        vm.prank(participant2);
+        lottery.join{value: ENTRY_FEE}();
+
+        lottery.performUpkeep("");
+
+        assert(lottery.getVrfRequestId() > 0);
     }
 }
