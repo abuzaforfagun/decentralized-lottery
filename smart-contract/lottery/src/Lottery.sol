@@ -77,21 +77,17 @@ contract Lottery is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         return s_requestID;
     }
 
-    function fulfillRandomWords(
-        uint256 requestId,
-        uint256[] calldata randomWords
-    ) internal override {
+    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
         uint256 totalParticipants = s_participantes.length;
 
         uint256 winnerIndex = randomWords[0] % totalParticipants;
 
         s_lastRoundWinner = s_participantes[winnerIndex];
 
-        uint256 platformComision = (address(this).balance *
-            PLATFORM_COMMISION_IN_PERCENTAGE) / 100;
+        uint256 platformComision = (address(this).balance * PLATFORM_COMMISION_IN_PERCENTAGE) / 100;
         uint256 winningPrize = address(this).balance - platformComision;
 
-        (bool success, ) = s_lastRoundWinner.call{value: winningPrize}("");
+        (bool success,) = s_lastRoundWinner.call{value: winningPrize}("");
 
         if (!success) {
             revert Lottery_PaymentFailed();
@@ -105,19 +101,16 @@ contract Lottery is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         s_requestID = 0;
     }
 
-    function checkUpkeep(
-        bytes calldata /* checkData */
-    )
+    function checkUpkeep(bytes calldata /* checkData */ )
         external
         view
         override
-        returns (bool upkeepNeeded, bytes memory /* performData */)
+        returns (bool upkeepNeeded, bytes memory /* performData */ )
     {
-        upkeepNeeded =
-            s_participantes.length == i_numberOfParticipantsRequiredToDraw;
+        upkeepNeeded = s_participantes.length == i_numberOfParticipantsRequiredToDraw;
     }
 
-    function performUpkeep(bytes calldata /* performData */) external override {
+    function performUpkeep(bytes calldata /* performData */ ) external override {
         if (s_participantes.length == i_numberOfParticipantsRequiredToDraw) {
             declareWinner();
         }
@@ -154,9 +147,7 @@ contract Lottery is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
                 requestConfirmations: NUM_OF_REQUEST_CONFIRMATION,
                 callbackGasLimit: CALLBACK_GAS_LIMIT,
                 numWords: NUM_OF_WORDS,
-                extraArgs: VRFV2PlusClient._argsToBytes(
-                    VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
-                )
+                extraArgs: VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: false}))
             })
         );
         return s_requestID;
