@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"os"
 	"strings"
 	"time"
 
@@ -16,18 +17,27 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/joho/godotenv"
 	"golang.org/x/crypto/sha3"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 var client *ethclient.Client
-var CONTRACT_ADDRESS = common.HexToAddress("0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9")
-var PRIVATE_KEY = "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+var CONTRACT_ADDRESS common.Address
+var PRIVATE_KEY string
 
 func main() {
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %s", err)
+	}
 
-	db, err := gorm.Open(mysql.Open("root:admin@tcp(localhost:3306)/lottery"), &gorm.Config{})
+	connectionString := os.Getenv("MYSQL_CONNECTION_STRING")
+	CONTRACT_ADDRESS = common.HexToAddress(os.Getenv("CONTRACT_ADDRESS"))
+	PRIVATE_KEY = os.Getenv("PRIVATE_KEY")
+
+	db, err := gorm.Open(mysql.Open(connectionString), &gorm.Config{})
 
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
@@ -37,7 +47,8 @@ func main() {
 	db.AutoMigrate(&dbmodels.Participant{})
 	db.AutoMigrate(&dbmodels.Winner{})
 
-	client, err = ethclient.Dial("ws://127.0.0.1:8545")
+	nodeUrl := os.Getenv("NODE_WS")
+	client, err = ethclient.Dial(nodeUrl)
 	if err != nil {
 		log.Fatalf("Failed to connect to Anvil: %v", err)
 	}
