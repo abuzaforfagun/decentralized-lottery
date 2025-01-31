@@ -13,3 +13,6 @@
 [submodule "smart-contract/lottery/lib/dotenv"]
 	path = smart-contract/lottery/lib/dotenv
 	url = https://github.com/dotenv-rs/dotenv
+[submodule "smart-contract/lottery/lib/openzeppelin-contracts"]
+	path = smart-contract/lottery/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
